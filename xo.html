@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type='module' src='./xo.js'></script>
+        <link rel='stylesheet' type='text/css' href='./xo.css' />
+    </head>
+    <body>
+        <div id="titleDiv">
+            <b><u>Teach your computer to play tic-tac-toe!</u></b>
+        </div>
+        <div id="gridWindow">
+            <button id="topLeft" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 0px; left: 0px;">&nbsp;</button>
+            <button id="topCenter" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 0px; left: 45px;">&nbsp;</button>
+            <button id="topRight" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 0px; left: 90px;">&nbsp;</button>
+
+            <button id="centerLeft" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 45px; left: 0px;">&nbsp;</button>
+            <button id="centerCenter" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 45px; left: 45px;">&nbsp;</button>
+            <button id="centerRight" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 45px; left: 90px;">&nbsp;</button>
+
+            <button id="bottomLeft" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 90px; left: 0px;">&nbsp;</button>
+            <button id="bottomCenter" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 90px; left: 45px;">&nbsp;</button>
+            <button id="bottomRight" class="gridButton" onclick="window.gameHandler.moveSequence.call(window.gameHandler, this.id)" style="top: 90px; left: 90px;">&nbsp;</button>
+        </div>
+        <div id="winState">&nbsp;</div>
+        <br />
+        <div id="resetDiv">
+            <button id="resetGame" onclick="window.gameHandler.resetGame.call(window.gameHandler)" disabled>reset</button> (click or press enter)
+        </div>
+        <div id="parameterDiv">
+            <b>Parameters:</b> <br /><br />
+            <div class="parameters">
+                epsilon: <input type="text" id="epsilonGreedy" value=0.1> <br /><br />
+                discount: <input type="text" id="discountFactor" value=1.0> <br /><br />
+                <!-- alpha: <input type="text" id="alphaLearn" value=0.1> -->
+            </div>
+        </div>
+    </body>
+</html>
