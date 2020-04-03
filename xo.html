@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script type='module' src='./xo.js'></script>
         <link rel='stylesheet' type='text/css' href='./xo.css' />
     </head>
@@ -28,11 +29,12 @@
         </div>
         <div id="parameterDiv">
             <b>Parameters:</b> <br /><br />
-            <div class="parameters">
-                epsilon: <input type="text" id="epsilonGreedy" value=0.1> <br /><br />
-                discount: <input type="text" id="discountFactor" value=1.0> <br /><br />
-                <!-- alpha: <input type="text" id="alphaLearn" value=0.1> -->
-            </div>
+            <table class="parameters">
+                <tr><td align="right">epsilon:</td> <td><input type="text" id="epsilonGreedy" value=0.1></td></tr> <!-- <br /><br /> -->
+                <tr><td align="right">discount:</td> <td><input type="text" id="discountFactor" value=1.0></td></tr> <!-- <br /><br /> -->
+                <tr><td align="right">learning rate:</td> <td><input type="text" id="alphaLearn" value=0.1></td></tr>
+            </table>
+            <button id="updateParams" onclick="window.gameHandler.updateParams.call(window.gameHandler)">Update</button>
         </div>
     </body>
 </html>

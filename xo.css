@@ -10,7 +10,7 @@ html {
 
 #gridWindow {
     position: absolute;
-    top: 35px;
+    top: 50px;
     left: 20px;
     width: 140px;
     height: 140px;
@@ -43,4 +43,8 @@ html {
 
 .parameters {
     margin-left: 15px;
+}
+
+#updateParams {
+    float: right;
 }
