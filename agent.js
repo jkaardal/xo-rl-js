@@ -1,5 +1,23 @@
 "use strict";
 import { InvalidActionError, TicTacToe } from './game.js';
+import { xoLog } from './logger.js';
+
+
+class MisalignedPlayerError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'MisalignedPlayerError';
+    }
+}
+
+
+class NotImplementedError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'NotImplementedError';
+    }
+}
+
 
 /**
  * Randomly choose an element of an array with uniform probability.
@@ -13,54 +31,21 @@ function randomChoice(arr) {
 
 
 /**
- * Agent whose policy is to always choose a random, valid move.
+ * Agent is the base class including universal agent methods. It should not be instantiated
+ * directly but rather used for inheritance.
  */
-export class RandomAgent {
+class Agent {
     /**
-     * Instantiate a RandomAgent agent.
+     * Instantiate a base Agent class.
      * 
-     * @param {TicTacToe} game An instantiation of TicTacToe.
-     * @return {number} The action to take as an index in [0, 8].
+     * @param {string} player Agent's player token from 'X' and 'O'.
+     * @param {any} defaultQ Variable that may be used to set the initial value of Q.
      */
-    policy(game) {
-        let validActions = game.getValidActions();
-        if (validActions.length === 0) {
-            throw new InvalidActionError('There is nowhere left to make a move!');
-        }
-        return randomChoice(validActions);
-    }
-
-    /**
-     * Learn by trial and error. RandomAgent does not learn.
-     * 
-     * @param {TicTacToe} game Unused.
-     * @param {function} rewardFunc Unused.
-     * @param {string} player Unused.
-     */
-    learn(game, rewardFunc, player) {
-
-    }
-}
-
-
-/**
- * Agent that uses Monte Carlo to update a tabular action-value function (Q-function).
- */
-export class MonteCarloAgent {
-    /**
-     * Instantiate a MonteCarloAgent agent.
-     * 
-     * @param {number} [epsilon=0.1] Probability of making a random valid move (epsilon greedy).  
-     * @param {number} [discount=1.0] Reward discount factor. 
-     * @param {number} [defaultQ=0.0] Initial value of the Q function for any state/action pair. 
-     */
-    constructor(epsilon=0.1, discount=1.0, defaultQ=0.0) {
-        this.epsilon = epsilon;
-        this.discount = discount;
+    constructor(player, defaultQ=null) {
+        this.player = player;
         this.Q = new Map();
         this.defaultQ = defaultQ;
         this.countQ = new Map();
-        this.rewards = [];
     }
 
     /**
@@ -96,7 +81,7 @@ export class MonteCarloAgent {
             let key = MonteCarloAgent._hash(newState, index);
             if (this.Q.has(key)) {
                 // A matching key was found, return it.
-                console.log(`${MonteCarloAgent._hash(state, action)} MATCHES ${key}`);
+                xoLog(`${MonteCarloAgent._hash(state, action)} MATCHES ${key}`);
                 return key;
             }
         }
@@ -112,7 +97,7 @@ export class MonteCarloAgent {
             let key = MonteCarloAgent._hash(newState, index);
             if (this.Q.has(key)) {
                 // A matching key was found, return it.
-                console.log(`${MonteCarloAgent._hash(state, action)} MATCHES ${key}`);
+                xoLog(`${MonteCarloAgent._hash(state, action)} MATCHES ${key}`);
                 return key;
             }
         }
@@ -126,11 +111,71 @@ export class MonteCarloAgent {
      * function (Q-function). 
      * 
      * @param {TicTacToe} game Instance of TicTacToe.
+     * @param {number|null} [horizon=null] When null, applies policy to latest state. If an
+     *     integer, it will instead apply the policy to the state at index horizon in the 
+     *     game's stateHistory.
      * @return {number} Integer index representing the action taken in [0, 8].
      */
-    policy(game) {
+    policy(game, horizon=null) {
+        /* This function must be implemented by ancestors. */
+        throw new NotImplementedError('Agent must implement policy().');
+    }
+
+    /**
+     * Learn by trial and error using Monte Carlo algorithm.
+     * 
+     * @param {TicTacToe} game Instantiation of TicTacToe. 
+     * @param {function} rewardFunc Reward function that takes in game and player and
+     *     returns a numeric reward.
+     */
+    learn(game, rewardFunc) {
+        /* Base agent does not learn. */
+    }
+}
+
+
+/**
+ * Base agent for agents with epsilon greedy policies.
+ */
+class EpsilonGreedyAgent extends Agent {
+    /**
+     * Instantiate a base Agent class.
+     * 
+     * @param {string} player Agent's player token from 'X' and 'O'.
+     * @param {number} [epsilon=0.1] Probability of making a random valid move (epsilon greedy).
+     * @param {any} [defaultQ=null] Variable that may be used to set the initial value of Q.
+     */
+    constructor(player, epsilon=0.1, defaultQ=null) {
+        super(player, defaultQ);
+        self.epsilon = epsilon;
+    }
+
+    /**
+     * Choose an epsilon-greedy action given the current state of the board and action-value
+     * function (Q-function). 
+     * 
+     * @param {TicTacToe} game Instance of TicTacToe.
+     * @param {number|null} [horizon=null] When horizon is null, apply policy to latest state.
+     *     If horizon is an integer, apply policy to game's stateHistory indexed by horizon.
+     * @return {number} Integer index representing the action taken in [0, 8].
+     */
+    policy(game, horizon=null) {
+        if (horizon == null && this.player != game.currentPlayer) {
+            throw new MisalignedPlayerError(`Agent should be player ${this.player} but it is` +
+                                            ` player ${game.currentPlayer}'s turn.`);
+        }
+
+        let state;
+        if (horizon == null) {
+            // Since horizon is null, apply policy to current state.
+            state = game.state;
+        } else {
+            // Apply the policy to a historic state.
+            state = game.stateHistory[horizon];
+        }
+
         // Get an array of valid action indices.
-        let validActions = game.getValidActions();
+        let validActions = game.getValidActions(horizon);
         if (validActions.length === 0) {
             throw new InvalidActionError('There is nowhere left to make a move!');
         }
@@ -139,7 +184,7 @@ export class MonteCarloAgent {
             return randomChoice(validActions);
         } else {
             // Map the current state and action proposals to Q-function keys.
-            let keys = validActions.map((action, _) => this.getKey(game.state, action));
+            let keys = validActions.map((action, _) => this.getKey(state, action));
             // Get an array of valid actions that have maximum return.
             let maxVal = -Infinity;
             let bestActions = [];
@@ -166,6 +211,71 @@ export class MonteCarloAgent {
             }
         }
     }
+}
+
+
+/**
+ * Agent whose policy is to always choose a random, valid move.
+ */
+export class RandomAgent extends Agent {
+    /**
+     * Instantiate a RandomAgent agent.
+     * 
+     * @param {string} player Agent's player token from 'X' and 'O'.
+     */
+    constructor(player) {
+        super(player);
+    }
+
+    /**
+     * Instantiate a RandomAgent agent.
+     * 
+     * @param {TicTacToe} game An instantiation of TicTacToe.
+     * @param {number|null} [horizon=null] When horizon is null, apply policy to latest state.
+     *     If horizon is an integer, apply policy to game's stateHistory indexed by horizon.
+     * @return {number} The action to take as an index in [0, 8].
+     */
+    policy(game, horizon=null) {
+        if (horizon == null && this.player != game.currentPlayer) {
+            throw new MisalignedPlayerError(`Agent should be player ${this.player} but it is` +
+                                            ` player ${game.currentPlayer}'s turn.`);
+        }
+        let validActions = game.getValidActions(horizon);
+        if (validActions.length === 0) {
+            throw new InvalidActionError('There is nowhere left to make a move!');
+        }
+        return randomChoice(validActions);
+    }
+
+    /**
+     * Learn by trial and error. RandomAgent does not learn.
+     * 
+     * @param {TicTacToe} game Unused.
+     * @param {function} rewardFunc Unused.
+     */
+    learn(game, rewardFunc) {
+
+    }
+}
+
+
+/**
+ * Agent that uses Monte Carlo to update a tabular action-value function (Q-function).
+ */
+export class MonteCarloAgent extends EpsilonGreedyAgent {
+    /**
+     * Instantiate a MonteCarloAgent agent.
+     * 
+     * @param {string} player Agent's player token from 'X' and 'O'.
+     * @param {number} [epsilon=0.1] Probability of making a random valid move (epsilon greedy).  
+     * @param {number} [discount=1.0] Reward discount factor. 
+     * @param {number} [defaultQ=0.0] Initial value of the Q function for any state/action pair. 
+     */
+    constructor(player, epsilon=0.1, discount=1.0, defaultQ=0.0) {
+        super(player, epsilon, defaultQ);
+        this.discount = discount;
+        this.rewards = [];
+    }
 
     /**
      * Learn by trial and error using Monte Carlo algorithm.
@@ -173,18 +283,17 @@ export class MonteCarloAgent {
      * @param {TicTacToe} game Instantiation of TicTacToe. 
      * @param {function} rewardFunc Reward function that takes in game and player and
      *     returns a numeric reward.
-     * @param {string} player Agent's player token from 'X' and 'O'.
      */
-    learn(game, rewardFunc, player) {
+    learn(game, rewardFunc) {
         // Compute a reward given the current state and store.
-        let reward = rewardFunc(game, player);
+        const reward = rewardFunc(game, game.currentPlayer, game.stateHistory.length);
         this.rewards.push(reward);
         
-        let outcome = game.checkTermination();
+        const outcome = game.checkTermination();
         if (outcome) {
             // Game is complete.
             let start, end;
-            if (player == 'X') {
+            if (this.player == 'X') {
                 // Offset for player 'X'.
                 start = 0;
             } else {
@@ -194,8 +303,8 @@ export class MonteCarloAgent {
 
             // Condition used to find the final state acted on by agent.
             let condition = (
-                (player == 'X' && game.stateHistory.length % 2 === 0) ||
-                (player == 'O' && game.stateHistory.length % 2 !== 0)
+                (this.player == 'X' && game.stateHistory.length % 2 === 0) ||
+                (this.player == 'O' && game.stateHistory.length % 2 !== 0)
             );
             if (condition) {
                 // Agent produced last state.
@@ -231,11 +340,140 @@ export class MonteCarloAgent {
                 // Update the number of episodes contributing the mean return update.
                 this.countQ.set(key, n + 1);
                 // Decrement reward storage index.
-                j--;
-                console.log(`key: ${key}, q: ${q}, Q: ${this.Q.get(key)}, n: ${this.countQ.get(key)}, rewards: ${this.rewards}`)
+                j -= 1;
+                xoLog(`key: ${key}, q: ${q}, Q: ${this.Q.get(key)}, n: ${this.countQ.get(key)}, \
+                       rewards: ${this.rewards}`);
             }
             // Reset the rewards storage.
             this.rewards = [];
+        }
+    }
+}
+
+
+/**
+ * Agent that performs temporal difference learning using Q-learning. To make the agent
+ * learn more quickly, the agent learns off-policy from the its opponent's actions.
+ * Learning is done offline at the end of the episode instead of online at intermediate
+ * steps as is typically done because the implementation is simpler and the results are
+ * equivalent because the agent cannot experience the same state multiple times in a
+ * given episode. This uses an epsilon greedy policy.
+ */
+export class QLearningAgent extends EpsilonGreedyAgent {
+    /**
+     * Instantiate a Q-learning agent.
+     * 
+     * @param {string} player Agent's player token from 'X' and 'O'.
+     * @param {number} [epsilon=0.1] Probability of making a random valid move (epsilon greedy).  
+     * @param {number} [discount=1.0] Reward discount factor. 
+     * @param {number} [alpha=0.1] The learning rate. Must be >= 0.
+     * @param {number} [defaultQ=0.0] Initial value of the Q function for any state/action pair. 
+     */
+    constructor(player, epsilon=0.1, discount=1.0, alpha=0.1, defaultQ=0.0) {
+        super(player, epsilon, defaultQ);
+        this.discount = discount;
+        this.alpha = alpha;
+        this.agentRewards = [];
+        this.opponentRewards = [];
+    }
+
+    /**
+     * Helper function that computes updates to the Q function.
+     * 
+     * @param {TicTacToe} game Instantiation of TicTacToe.
+     * @param {string} playerChoice A player token from 'X' and 'O'.
+     * @param {function} rewardFunc Reward function that takes in game and player and
+     *     returns a numeric reward.
+     */
+    updateQ(game, playerChoice, rewardFunc) {
+        let start = playerChoice == 'X' ? 0 : 1;
+        let end;
+        let condition = (
+            (playerChoice == 'X' && game.stateHistory.length % 2 == 0) ||
+            (playerChoice == 'O' && game.stateHistory.length % 2 != 0)
+        );
+        if (condition) {
+            // playerChoice made the last move in the game.
+            end = game.stateHistory.length - 2;
+        } else {
+            // playerChoice did not make the last move in the game.
+            end = game.stateHistory.length - 3;
+        }
+
+        // Loop through all intermediate states (states that did not lead to a terminal
+        // state) in the episode where playerChoice had to choose a move to make.
+        for (let i = start; i < end; i += 2) {
+            // Compute the reward on the resulting state after a back and forth.
+            let reward = rewardFunc(game, playerChoice, i + 2);
+
+            // Get the value of Q at the initial state/action.
+            let oldKey = this.getKey(
+                game.stateHistory[i],
+                game.actionHistory[i]
+            );
+            let oldQ = this.Q.has(oldKey) ? this.Q.get(oldKey) : this.defaultQ;
+
+            // Take a greedy action on the next state (after a back and forth) and get
+            // the value of Q with the state/action pair.
+            let futureAction = this.policy(game, i + 2);
+            let futureKey = this.getKey(
+                game.stateHistory[i + 2],
+                futureAction
+            );
+            let futureQ = this.Q.has(futureKey) ? this.Q.get(futureKey) : this.defaultQ;
+
+            // Update the value of Q at the initial state.
+            this.Q.set(
+                oldKey,
+                oldQ + this.alpha * (reward + this.discount * futureQ - oldQ)
+            );
+            xoLog(`player: ${playerChoice}, oldKey: ${oldKey}, oldQ: ${oldQ}, futureKey: ${futureKey}, \
+                   futureQ: ${futureQ}, reward: ${reward}, newQ: ${this.Q.get(oldKey)}`);
+        }
+
+        // Compute the terminal reward.
+        let terminalReward = rewardFunc(game, playerChoice, null);
+
+        // Get the key of the last state/action pair where playerChoice made a move and
+        // get the value of the Q function.
+        let terminalKey = this.getKey(
+            game.stateHistory[end],
+            game.actionHistory[end]
+        );
+        let terminalQ = this.Q.has(terminalKey) ? this.Q.get(terminalKey) : this.defaultQ;
+
+        // Update the value of Q for the terminal state/action pair.
+        this.Q.set(
+            terminalKey,
+            terminalQ + this.alpha * (terminalReward - terminalQ)
+        );
+        xoLog(`player: ${playerChoice}, terminalKey: ${terminalKey}, terminalQ: ${terminalQ}, \
+               terminalReward: ${terminalReward}, newQ: ${this.Q.get(terminalKey)}`);
+    }
+
+    /**
+     * Learn by trial and error using Q-learning. Take advantage of off-policy learning
+     * and also learn from the agent's opponent. Learning is done offline at the end
+     * of each episode.
+     * 
+     * @param {TicTacToe} game Instantiation of TicTacToe.
+     * @param {*} rewardFunc Reward function that takes in game and player and
+     *     returns a numeric reward.
+     */
+    learn(game, rewardFunc) {
+        const outcome = game.checkTermination();
+        if (outcome) {
+            // Game is complete.
+            // Swap out epsilon such that the policy is greedy.
+            const storeEpsilon = this.epsilon;
+            this.epsilon = -1.0;
+
+            // Learn from both player's trials.
+            this.updateQ(game, 'X', rewardFunc);
+            this.updateQ(game, 'O', rewardFunc);
+
+            // Restore epsilon.
+            this.epsilon = storeEpsilon;
         }
     }
 }
