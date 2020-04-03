@@ -1,4 +1,5 @@
 "use strict";
+import { xoLog } from './logger.js';
 
 
 export class InvalidActionError extends Error {
@@ -216,9 +217,21 @@ export class TicTacToe {
     /**
      * Check whether the game has completed and who has won, if anyone.
      * 
+     * @param {number|null} [horizon=null] If horizon is null, will check the termination
+     *     conditions on the current state. If horizon is an integer, it will check the
+     *     termination conditions on the game's stateHistory at index horizon.
      * @return {string} From 'X', 'O', 'draw', or ''.
      */
-    checkTermination() {
+    checkTermination(horizon=null) {
+        let state;
+        if (horizon == null) {
+            // Check termination condition on current state.
+            state = this.state;
+        } else {
+            // Check termination on a historic state.
+            state = this.stateHistory[horizon];
+        }
+
         // Initialize diagonal win indicators.
         let tlX = true;
         let trX = true;
@@ -237,43 +250,43 @@ export class TicTacToe {
 
             // Check ith element diagonally from top-left to bottom-right.
             let index = TicTacToe.unroll(i, i);
-            if (this.state[index] != 'X') {
+            if (state[index] != 'X') {
                 tlX = false;
             }
-            if (this.state[index] != 'O') {
+            if (state[index] != 'O') {
                 tlO = false;
             }
 
             // Check ith element diagonally from top-right to bottom-left.
             index = TicTacToe.unroll(i, 2 - i);
-            if (this.state[index] != 'X') {
+            if (state[index] != 'X') {
                 trX = false;
             }
-            if (this.state[index] != 'O') {
+            if (state[index] != 'O') {
                 trO = false;
             }
 
             for (let j = 0; j < 3; j++) {
                 // Check the jth column of the ith row.
                 let index = TicTacToe.unroll(i, j);
-                if (this.state[index] != 'X') {
+                if (state[index] != 'X') {
                     rowX = false;
                 }
-                if (this.state[index] != 'O') {
+                if (state[index] != 'O') {
                     rowO = false;
                 }
 
                 // If there are any empty indices of state, this cannot be a draw game.
-                if (this.state[index] == this.nll) {
+                if (state[index] == this.nll) {
                     draw = false;
                 }
 
                 // Check the jth row of the ith column.
                 index = TicTacToe.unroll(j, i);
-                if (this.state[index] != 'X') {
+                if (state[index] != 'X') {
                     colX = false;
                 }
-                if (this.state[index] != 'O') {
+                if (state[index] != 'O') {
                     colO = false;
                 }
             }
@@ -304,12 +317,24 @@ export class TicTacToe {
     /**
      * Get the current valid actions that may be taken given the state of the game.
      * 
+     * @param {number|null} [horizon=null] If horizon is null, this will return valid actions
+     *     on the current state. If horizon is an integer, the valid actions will be returned on
+     *     the game's stateHistory indexed at horizon.
      * @return {Array(number)} Indices of valid actions.
      */
-    getValidActions() {
+    getValidActions(horizon=null) {
+        let state;
+        if (horizon == null) {
+            // Get valid actions on the current state.
+            state = this.state;
+        } else {
+            // Get valid actions on a historic state.
+            state = this.stateHistory[horizon];
+        }
+
         let valid = [];
         for (let i = 0; i < 9; i++) {
-            if (this.state[i] == this.nll) {
+            if (state[i] == this.nll) {
                 valid.push(i);
             }
         }
@@ -342,7 +367,7 @@ export class TicTacToe {
      * Print a visualization of the current game state to console.
      */
     printState() {
-        console.log(this.toString());
+        xoLog(this.toString());
     }
 
     /**
