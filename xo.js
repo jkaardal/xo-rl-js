@@ -1,6 +1,7 @@
 import { TicTacToe } from './game.js';
-import { RandomAgent, MonteCarloAgent } from './agent.js';
+import { RandomAgent, MonteCarloAgent, QLearningAgent } from './agent.js';
 import { terminalOnly } from './rewards.js';
+import { disableLogging } from './logger.js';
 
 
 // Convert grid button id to a state array index.
@@ -46,8 +47,9 @@ class GameHandler {
         this.agent = agent;
         this.rewardFunc = rewardFunc;
 
-        if (this.agent instanceof MonteCarloAgent) {
-            // For MonteCarloAgent, pull and store epsilon and discount hyperparameters.
+        if (this.agent instanceof MonteCarloAgent || this.agent instanceof QLearningAgent) {
+            // For MonteCarloAgent or QLearningAgent, pull and store epsilon and discount 
+            // hyperparameters.
             let epsilonField = document.getElementById('epsilonGreedy');
             let epsilon = epsilonField.value;
             if (!isNaN(epsilon) && Number(epsilon) >= 0.0 && Number(epsilon) <= 1.0) {
@@ -64,6 +66,18 @@ class GameHandler {
             } else {
                 discount = 1.0;
                 discountField.value = discount;
+            }
+
+            if (this.agent instanceof QLearningAgent) {
+                // For QLearningAgent, pull and store the learning rate (alpha).
+                let alphaField = document.getElementById('alphaLearn');
+                let alpha = alphaField.value;
+                if (!isNaN(alpha) && Number(alpha) >= 0.0) {
+                    this.agent.alpha = Number(alpha);
+                } else {
+                    alpha = 0.1;
+                    alphaField.value = alpha;
+                }
             }
         }
     }
@@ -98,9 +112,9 @@ class GameHandler {
         this.playerMove(buttonId);
 
         if (this.game.actionHistory.length > 1) {
-            // Learning is performed after the computer then player moves. Therefore learning
-            // cannot occur until at least 2 actions have taken place.
-            this.agent.learn(this.game, this.rewardFunc, this.game.currentPlayer);
+            // Learning cannot occur util after the player and computer have both moved at
+            // least once.
+            this.agent.learn(this.game, this.rewardFunc);
         }
 
         let outcome = this.game.checkTermination();
@@ -117,7 +131,6 @@ class GameHandler {
                 this.agent.learn(
                     this.game, 
                     this.rewardFunc, 
-                    this.game.currentPlayer == 'X' ? 'O' : 'X',
                 );
                 this.enableReset();
             }
@@ -161,7 +174,24 @@ class GameHandler {
      * Reset the game (start a fresh game).
      */
     resetGame() {
-        if (this.agent instanceof MonteCarloAgent) {
+        // Disable the reset button and reset the game.
+        this.disableReset();
+        this.game.reset();
+
+        if (Math.random() < 0.5) {
+            // Player (user) is 'O' in the next game.
+            this.playerChoice = 'O';
+            this.agent.player = 'X';
+            this.computerMove();
+        } else {
+            // Player (user) is 'X' in the next game.
+            this.playerChoice = 'X';
+            this.agent.player = 'O';
+        }
+    }
+
+    updateParams() {
+        if (this.agent instanceof MonteCarloAgent || this.agent instanceof QLearningAgent) {
             // Pull in any new values for the epsilon and discount hyperparameters.
             let epsilonField = document.getElementById('epsilonGreedy');
             let epsilon = epsilonField.value;
@@ -180,18 +210,18 @@ class GameHandler {
                 discount = this.agent.discount;
                 discountField.value = discount;
             }
-        }
-        // Disable the reset button and reset the game.
-        this.disableReset();
-        this.game.reset();
 
-        if (Math.random() < 0.5) {
-            // Player (user) is 'O' in the next game.
-            this.playerChoice = 'O';
-            this.computerMove();
-        } else {
-            // Player (user) is 'X' in the next game.
-            this.playerChoice = 'X';
+            if (this.agent instanceof QLearningAgent) {
+                // Pull and store the learning rate (alpha).
+                let alphaField = document.getElementById('alphaLearn');
+                let alpha = alphaField.value;
+                if (!isNaN(alpha) && Number(alpha) >= 0.0) {
+                    this.agent.alpha = Number(alpha);
+                } else {
+                    alpha = this.agent.alpha;
+                    alphaField.value = alpha;
+                }
+            }
         }
     }
 }
@@ -202,8 +232,14 @@ class GameHandler {
    the reward function. */
 let playerChoice = 'X';
 let game = new TicTacToe();
-let agent = new MonteCarloAgent();
+let agent = new QLearningAgent(playerChoice == 'X' ? 'O' : 'X')
 let rewardFunc = terminalOnly;
+
+const debug = false;
+if (!debug) {
+    // When debug is false, turn off all logging.
+    disableLogging();
+}
 
 // Instantiate the game handler.
 window.gameHandler = new GameHandler(
