@@ -190,6 +190,9 @@ class GameHandler {
         }
     }
 
+    /**
+     * Update the hyperparameters of the agent by pulling values from fields.
+     */
     updateParams() {
         if (this.agent instanceof MonteCarloAgent || this.agent instanceof QLearningAgent) {
             // Pull in any new values for the epsilon and discount hyperparameters.
