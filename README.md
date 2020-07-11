@@ -10,9 +10,9 @@ python -m http.server
 which should serve xo-rl-js on localhost:8000 by default (see the [documentation](https://docs.python.org/3/library/http.server.html) for more information).
 
 Three hyperparameters are provided:
-- `epsilon`: is the probability that the computer will make a random move. This is to make sure the computer explores rather than getting stuck behaving suboptimally. Since it is a probability, the value should be in [0, 1].
+- `epsilon`: is the probability that the computer will make a random move. This is to make sure the computer explores rather than getting stuck behaving suboptimally. Since it is a probability, the value should be in [0, 1]. Default is set to 0.0 (no exploration).
 - `discount`: a discount factor that can be adjusted to change the "reach" of a reward back in time. This is usually kept at 1.0 in episodic games (games that terminate). In continuous games, this would be <1.0 to ensure that the total reward does not diverge. (Refer to the literature to learn more)
-- `learning rate`: the "speed" at which the computer learns from a game. The learning rate must be greater than or equal to zero. A small learning rate means that the computer will learn slowly while a large learning rate could lead learning to be volatile and not learn. The default value of 0.1 seems to work adequately but has not been optimized in any way.
+- `learning rate`: the "speed" at which the computer learns from a game. The learning rate must be in [0, 1]. A small learning rate means that the computer will learn slowly while a large learning rate could lead learning to be volatile and not learn. The default value of 0.1 seems to work adequately but has not been optimized in any way.
 
 ## Behind the scenes
 

@@ -55,7 +55,7 @@ class GameHandler {
             if (!isNaN(epsilon) && Number(epsilon) >= 0.0 && Number(epsilon) <= 1.0) {
                 this.agent.epsilon = Number(epsilon);
             } else {
-                epsilon = 0.1;
+                epsilon = 0.0;
                 epsilonField.value = epsilon;
             }
 
