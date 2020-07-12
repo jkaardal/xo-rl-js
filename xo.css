@@ -39,6 +39,7 @@ html {
     position: absolute;
     top: 270px;
     left: 25px;
+    max-width: 600px;
 }
 
 .parameters {
