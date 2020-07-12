@@ -72,7 +72,7 @@ class GameHandler {
                 // For QLearningAgent, pull and store the learning rate (alpha).
                 let alphaField = document.getElementById('alphaLearn');
                 let alpha = alphaField.value;
-                if (!isNaN(alpha) && Number(alpha) >= 0.0) {
+                if (!isNaN(alpha) && Number(alpha) >= 0.0 && Number(alpha) <= 1.0) {
                     this.agent.alpha = Number(alpha);
                 } else {
                     alpha = 0.1;
@@ -218,7 +218,7 @@ class GameHandler {
                 // Pull and store the learning rate (alpha).
                 let alphaField = document.getElementById('alphaLearn');
                 let alpha = alphaField.value;
-                if (!isNaN(alpha) && Number(alpha) >= 0.0) {
+                if (!isNaN(alpha) && Number(alpha) >= 0.0 && Number(alpha) <= 1.0) {
                     this.agent.alpha = Number(alpha);
                 } else {
                     alpha = this.agent.alpha;

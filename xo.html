@@ -30,11 +30,32 @@
         <div id="parameterDiv">
             <b>Parameters:</b> <br /><br />
             <table class="parameters">
-                <tr><td align="right">epsilon:</td> <td><input type="text" id="epsilonGreedy" value=0.0></td></tr> <!-- <br /><br /> -->
-                <tr><td align="right">discount:</td> <td><input type="text" id="discountFactor" value=1.0></td></tr> <!-- <br /><br /> -->
+                <tr><td align="right">epsilon:</td> <td><input type="text" id="epsilonGreedy" value=0.0></td></tr>
+                <tr><td align="right">discount:</td> <td><input type="text" id="discountFactor" value=1.0></td></tr>
                 <tr><td align="right">learning rate:</td> <td><input type="text" id="alphaLearn" value=0.1></td></tr>
             </table>
             <button id="updateParams" onclick="window.gameHandler.updateParams.call(window.gameHandler)">Update</button>
+        </div>
+        <div>
+            <b>Definitions:</b>
+            <p>
+                <b>epsilon</b> is the probability the agent (computer) will make a random move. The purpose of this
+                is to encourage the agent to explore alternative moves rather than greedily choosing the move that
+                it presently believes to lead to the highest reward. Being a probability, this value should be between
+                0.0 (no exploration) and 1.0 (random agent).
+            </p>
+            <p>
+                <b>discount</b> reduces the impact of future rewards on the current state. This is typically used to
+                prevent the return from diverging in continuous problems. Of course, tic-tac-toe is episodic and
+                therefore it is fine to leave this factor at 1.0 (no discounting). This can take on a value between 0.0
+                and 1.0.
+            </p>
+            <p>
+                <b>learning rate</b> is the speed at which the agent learns from an episode. This is a value between
+                0.0 and 1.0. A learning rate of 0.0 means the agent will not learn anything. A learning rate of 1.0,
+                on the other hand, means the agent will only remember its latest encounter with a state and may not
+                remember other experiences with a state of the game. This parameter can be optimized.
+            </p>
         </div>
     </body>
 </html>
